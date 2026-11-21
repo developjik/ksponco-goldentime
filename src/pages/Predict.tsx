@@ -1,26 +1,57 @@
 export default function Predict() {
   return (
-    <section>
-      <h1>골든타임 예측·히트맵</h1>
-
-      <div className="card placeholder-section">
-        <p className="placeholder-badge">데이터 활용 신청 중</p>
-        <p className="placeholder-title">이 섹션은 준비 중입니다</p>
-        <p>
-          시간대별·요일별 주차 수요 히트맵과 대기 없이 입장할 수 있는 골든타임 예측은{' '}
-          <strong>공공데이터포털 「한국체육산업개발주식회사_실시간 주차현황」 OpenAPI</strong>{' '}
-          데이터 활용 승인 후 제공됩니다. 승인이 나오면 이 자리가 바로 채워집니다.
-        </p>
-        <ul className="meta-list">
-          <li>계획 1 — 입출차 기록 기반 시간대별 혼잡 히트맵</li>
-          <li>계획 2 — 혼잡이 풀리는 시점(골든타임) 예측 안내</li>
-          <li>계획 3 — 행사 일정과 겹쳐 보는 혼잡 리스크 표시</li>
-        </ul>
-      </div>
-
-      <p className="meta-text">
-        지금은 홈에서 실시간 전체 혼잡과 세션 내 추이를 확인할 수 있습니다.
+    <div className="home">
+      <h1 className="page-title">골든타임 예측·히트맵</h1>
+      <p className="lede">
+        언제 가장 빈자리가 많을지, 과거 기록으로 미리 알려주는 화면을 만들고 있습니다.
       </p>
-    </section>
+
+      <section className="panel" aria-labelledby="data-title">
+        <div className="panel-head">
+          <h2 id="data-title">학습 데이터 현황</h2>
+        </div>
+        <ul className="data-list">
+          <li className="data-row">
+            <span className="data-name">2025년 입출차 기록</span>
+            <span className="data-value">약 240만 건</span>
+            <span className="data-state is-done">확보 완료</span>
+          </li>
+          <li className="data-row">
+            <span className="data-name">시간별 연계 데이터</span>
+            <span className="data-value">7,803건</span>
+            <span className="data-state is-done">확보 완료</span>
+          </li>
+          <li className="data-row">
+            <span className="data-name">실시간 주차현황</span>
+            <span className="data-value">60초 간격</span>
+            <span className="data-state is-live">서비스 중</span>
+          </li>
+        </ul>
+        <p className="muted small">
+          입출차 기록은 게이트(동2문·남2문·북2문)별 시각을 담고, 연계 데이터는 같은 시간의
+          공연 관람객·날씨·방문객을 담습니다.
+        </p>
+      </section>
+
+      <section className="panel" aria-labelledby="heatmap-title">
+        <div className="panel-head">
+          <h2 id="heatmap-title">요일×시간 히트맵</h2>
+          <span className="data-state is-wip">집계 중</span>
+        </div>
+        <div className="heatmap-skeleton" aria-hidden="true">
+          {Array.from({ length: 7 }, (_, d) => (
+            <div className="heatmap-row" key={d}>
+              {Array.from({ length: 24 }, (_, h) => (
+                <span className="heatmap-cell" key={h} style={{ opacity: 0.18 + ((d * 24 + h) % 7) * 0.05 }} />
+              ))}
+            </div>
+          ))}
+        </div>
+        <p className="muted small">
+          확보한 기록을 요일·시간대별 빈자리로 집산하는 중입니다. 집계가 끝나면 이 자리에 실제
+          히트맵이 표시되고, 각 요일의 골든타임이 함께 안내됩니다.
+        </p>
+      </section>
+    </div>
   );
 }

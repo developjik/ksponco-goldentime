@@ -1,3 +1,5 @@
+import { useEffect, useReducer } from 'react';
+import { RefreshIcon } from './Icons';
 import {
   TOTAL_CAPACITY,
   congestionLevel,
@@ -7,47 +9,85 @@ import {
 } from '../lib/congestion';
 
 const LEVEL_CLASS: Record<CongestionLevel, string> = {
-  여유: 'level-good',
-  보통: 'level-normal',
-  혼잡: 'level-busy',
-  '매우 혼잡': 'level-severe',
+  여유: 'lv-good',
+  보통: 'lv-normal',
+  혼잡: 'lv-busy',
+  '매우 혼잡': 'lv-severe',
 };
 
-export interface GaugeProps {
-  /** 현재 전체 주차대수 */
+/** 재차율 단계 경계(%) — 게이지 눈금과 안내 페이지 기준이 같음을 보여준다. */
+const THRESHOLDS = [40, 70, 85];
+
+export interface GaugePanelProps {
   parked: number;
+  lastAt: number;
+  pollMs: number;
+  loading: boolean;
+  onRefresh: () => void;
 }
 
-/** 실시간 전체 혼잡 게이지: 숫자 + 재차율 진행 막대 + 단계 배지. */
-export default function Gauge({ parked }: GaugeProps) {
+/**
+ * 실시간 상태 패널(다크 계기판).
+ * 운전자가 먼저 보는 값은 '빈 자리'다 — 주차대수·재차율은 보조로 배치한다.
+ * 남은 시간은 1초 틱으로 갱신: "N초 후 자동 갱신".
+ */
+export default function GaugePanel({ parked, lastAt, pollMs, loading, onRefresh }: GaugePanelProps) {
+  const [, tick] = useReducer((x: number) => x + 1, 0);
+  useEffect(() => {
+    const id = window.setInterval(tick, 1000);
+    return () => window.clearInterval(id);
+  }, []);
+
   const percent = occupancyPercent(parked);
   const level = congestionLevel(percent);
-  // 재차율 100% 초과(집계 기준 총면수 초과)에도 막대는 100%에서 잘라 표시.
+  const spotsLeft = Math.max(TOTAL_CAPACITY - parked, 0);
   const barWidth = Math.min(percent, 100);
+  const secLeft = Math.max(0, Math.ceil((lastAt + pollMs - Date.now()) / 1000));
 
   return (
-    <div className="gauge" role="group" aria-label="실시간 전체 주차 혼잡">
-      <div className="gauge-top">
-        <p className="gauge-number">
-          {formatCount(parked)}
-          <span className="gauge-unit">대</span>
-        </p>
-        <span className={`level-badge ${LEVEL_CLASS[level]}`}>{level}</span>
+    <section className="hero" aria-label="올림픽공원 전체 주차장 실시간 상태">
+      <div className="hero-head">
+        <p className="hero-label">올림픽공원 전체 주차장</p>
+        <span className={`hero-badge ${LEVEL_CLASS[level]}`}>{level}</span>
       </div>
-      <div
-        className="gauge-bar"
-        role="meter"
-        aria-valuenow={percent}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-label={`전체 주차장 재차율 ${percent}% (${level})`}
-      >
-        <div className={`gauge-fill ${LEVEL_CLASS[level]}`} style={{ width: `${barWidth}%` }} />
-      </div>
-      <p className="gauge-caption">
-        전체 수용 능력 약 {formatCount(TOTAL_CAPACITY)}대 기준 재차율{' '}
-        <strong>{percent}%</strong>
+
+      <p className="hero-main">
+        빈 자리 <strong>{formatCount(spotsLeft)}</strong>대
+        <span className="hero-sub">약 {formatCount(TOTAL_CAPACITY)}대 중</span>
       </p>
-    </div>
+
+      <div className="hero-gauge" aria-hidden="true">
+        <div className="hero-gauge-track">
+          <div className={`hero-gauge-fill ${LEVEL_CLASS[level]}`} style={{ width: `${barWidth}%` }} />
+          {THRESHOLDS.map((t) => (
+            <span key={t} className="hero-gauge-tick" style={{ left: `${t}%` }} />
+          ))}
+        </div>
+        <div className="hero-gauge-scale">
+          <span>0</span>
+          <span>주차율 {percent}%</span>
+          <span>100</span>
+        </div>
+      </div>
+
+      <p className="hero-figure" role="meter" aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100} aria-label={`주차율 ${percent}%, ${level}. 현재 주차된 차 ${formatCount(parked)}대`}>
+        현재 주차된 차 <strong>{formatCount(parked)}</strong>대 · 주차율 {percent}%
+      </p>
+
+      <div className="hero-actions">
+        <span className="hero-clock">
+          {loading ? '업데이트 중…' : `${secLeft}초 후 자동 갱신`}
+        </span>
+        <button
+          type="button"
+          className="hero-refresh"
+          onClick={onRefresh}
+          disabled={loading}
+        >
+          <RefreshIcon className={loading ? 'spin' : undefined} />
+          새로고침
+        </button>
+      </div>
+    </section>
   );
 }

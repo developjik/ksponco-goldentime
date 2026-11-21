@@ -1,69 +1,68 @@
 import { Link } from 'react-router-dom';
-import Gauge from '../components/Gauge';
+import GaugePanel from '../components/Gauge';
 import Sparkline from '../components/Sparkline';
-import { useParking } from '../hooks/useParking';
-import { formatClock } from '../lib/congestion';
+import { ChevronIcon } from '../components/Icons';
+import { POLL_MS, useParking } from '../hooks/useParking';
 
 export default function Home() {
   const { snapshot, history, loading, error, refresh } = useParking();
 
   return (
-    <section>
-      <h1>지금 올림픽공원</h1>
-      <p>한국체육산업개발(주) 실시간 주차현황 기반, 전체 주차장 혼잡 한눈에 보기.</p>
+    <div className="home">
+      <h1 className="page-title">지금 올림픽공원</h1>
 
-      <div className="card">
-        {snapshot ? (
-          <>
-            <Gauge parked={snapshot.parkedTotal} />
-            <div className="refresh-row">
-              <span className="meta-text">
-                마지막 업데이트 {formatClock(snapshot.fetchedAt)} · 1분마다 자동 갱신
-              </span>
-              <button type="button" onClick={refresh} disabled={loading}>
-                {loading ? '불러오는 중…' : '지금 새로고침'}
-              </button>
-            </div>
-            {error && (
-              <p role="alert" className="error-text">
-                최신 갱신에 실패했습니다 ({error}). 마지막 값을 표시하는 중입니다.
-              </p>
-            )}
-          </>
-        ) : loading ? (
-          <p>실시간 주차현황을 불러오는 중…</p>
-        ) : (
-          <div role="alert" className="error-block">
-            <p className="error-text">
-              실시간 주차현황을 가져오지 못했습니다.
-              {error ? ` (${error})` : ''}
-            </p>
-            <button type="button" onClick={refresh}>
-              다시 시도
-            </button>
-          </div>
-        )}
-      </div>
+      {snapshot ? (
+        <GaugePanel
+          parked={snapshot.parkedTotal}
+          lastAt={snapshot.fetchedAt}
+          pollMs={POLL_MS}
+          loading={loading}
+          onRefresh={refresh}
+        />
+      ) : loading ? (
+        <section className="hero hero-loading" aria-label="실시간 주차현황 불러오는 중">
+          <p className="hero-label">올림픽공원 전체 주차장</p>
+          <p className="hero-main skeleton-line" aria-label="불러오는 중">불러오는 중…</p>
+          <p className="muted">한국체육산업개발(주) 실시간 주차현황에서 값을 가져오고 있습니다.</p>
+        </section>
+      ) : (
+        <section className="hero hero-error" role="alert" aria-label="실시간 주차현황 오류">
+          <p className="hero-label">올림픽공원 전체 주차장</p>
+          <p className="hero-main">
+            실시간 값을 가져오지 못했습니다
+          </p>
+          <p className="muted">{error ?? '네트워크 상태를 확인해 주세요.'}</p>
+          <button type="button" className="hero-refresh" onClick={refresh}>
+            다시 시도
+          </button>
+        </section>
+      )}
 
-      <div className="card">
-        <h2>세션 내 추이</h2>
+      {snapshot && error && (
+        <p role="status" className="notice">
+          최근 갱신에 실패해 마지막 값을 표시하는 중입니다 ({error}).
+        </p>
+      )}
+
+      <section className="panel" aria-labelledby="trend-title">
+        <div className="panel-head">
+          <h2 id="trend-title">방문 중 추이</h2>
+          <span className="muted">이 탭에서만</span>
+        </div>
         <Sparkline points={history} />
-        <p className="meta-text">
-          그래프는 이번 방문 중 수집된 측정값만 담습니다 — 페이지를 새로고침하면 초기화됩니다.
+        <p className="muted small">
+          이 그래프는 지금 이 페이지를 연 뒤 수집한 측정값만 담습니다. 페이지를 다시 열면 처음부터
+          쌓입니다.
         </p>
-      </div>
+      </section>
 
-      <div className="card card-cta">
-        <h2>골든타임 예측·히트맵</h2>
-        <p>
-          시간대별 혼잡 히트맵과 입장 최적 시간(골든타임) 예측을 준비 중입니다.
-          <br />
-          공공데이터포털 데이터 활용 승인 후 순차 공개됩니다.
-        </p>
-        <Link to="/predict" className="link-button">
-          준비 상황 보기
-        </Link>
-      </div>
-    </section>
+      <Link to="/predict" className="row-link">
+        <span>
+          <strong>골든타임 예측·히트맵</strong>
+          <span className="muted small">학습 데이터 확보 완료 — 히트맵·예측 준비 중</span>
+        </span>
+        <ChevronIcon />
+      </Link>
+    </div>
   );
 }

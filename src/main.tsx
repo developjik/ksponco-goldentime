@@ -4,12 +4,13 @@ import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom';
 import Home from './pages/Home';
 import Predict from './pages/Predict';
 import Guide from './pages/Guide';
+import { GaugeIcon, HeatIcon, InfoIcon } from './components/Icons';
 import './index.css';
 
 const NAV_ITEMS = [
-  { to: '/', label: '실시간', icon: '⏱️', end: true },
-  { to: '/predict', label: '예측', icon: '🔮', end: false },
-  { to: '/guide', label: '이용안내', icon: 'ℹ️', end: false },
+  { to: '/', label: '실시간', icon: GaugeIcon, end: true },
+  { to: '/predict', label: '예측', icon: HeatIcon, end: false },
+  { to: '/guide', label: '이용안내', icon: InfoIcon, end: false },
 ];
 
 function App() {
@@ -19,7 +20,15 @@ function App() {
         본문으로 건너뛰기
       </a>
       <header className="app-header">
-        <strong className="app-title">올팍 골든타임</strong>
+        <strong className="app-title">
+          <svg width="22" height="22" viewBox="0 0 64 64" aria-hidden="true" className="app-mark">
+            <rect width="64" height="64" rx="14" fill="#101725" />
+            <circle cx="32" cy="27" r="11" fill="#f5b340" />
+            <rect x="12" y="40" width="40" height="4" rx="2" fill="#f5b340" />
+            <rect x="18" y="48" width="28" height="4" rx="2" fill="#4d5b75" />
+          </svg>
+          올팍 골든타임
+        </strong>
         <nav className="app-nav" aria-label="주요 메뉴">
           {NAV_ITEMS.map((item) => (
             <NavLink
@@ -28,9 +37,7 @@ function App() {
               end={item.end}
               className={({ isActive }) => (isActive ? 'active' : undefined)}
             >
-              <span className="nav-icon" aria-hidden="true">
-                {item.icon}
-              </span>
+              <item.icon className="nav-icon" />
               <span>{item.label}</span>
             </NavLink>
           ))}
@@ -44,8 +51,8 @@ function App() {
         </Routes>
       </main>
       <footer className="app-footer">
-        출처: 한국체육산업개발(주) 실시간 주차현황 · 올림픽공원 홈페이지 · 공공데이터포털(예측
-        데이터 활용 신청 중)
+        데이터: 한국체육산업개발(주) 실시간 주차현황 · 올림픽공원 홈페이지 · 공공데이터포털(예측
+        데이터)
       </footer>
     </BrowserRouter>
   );
