@@ -1,7 +1,7 @@
 name: Refresh realtime history
 
 # 키 불필요한 공개 실시간 API(ksponco parkingorsApi)를 30분마다 호출해
-# data/realtime-history.json에 쌓는다. GITHUB_TOKEN push는 push 이벤트를
+# public/data/realtime-history.json에 쌓는다(홈 '최근 24시간 추이' 패널의 데이터). GITHUB_TOKEN push는 push 이벤트를
 # 트리거하지 않으므로(재귀 방지) deploy.yml이 workflow_run으로 이어받는다.
 on:
   schedule:
@@ -30,6 +30,6 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
-          git add data/realtime-history.json
+          git add public/data/realtime-history.json
           git diff --cached --quiet || git commit -m 'chore: 실시간 주차현황 스냅샷 갱신'
           git push

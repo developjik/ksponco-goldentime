@@ -16,6 +16,8 @@
 - **어느 문으로 들어올까?**: 공공데이터포털 입출차 전체구역 데이터(2025년 약 240만 건)를
   게이트×요일×시간 입차 건수·평균 체류시간으로 집산해 게이트별 유입 비중·피크 시간을
   제공(집산 결과는 `public/data/gates-2025.json`).
+- **최근 24시간 추이**: 30분마다 자동 수집한 주차대수 기록(`public/data/realtime-history.json`)으로
+  최근 하루 곡선을 홈에 표시. 페이지를 닫아도 계속 쌓인다.
 
 ## 데이터
 
@@ -41,8 +43,8 @@ npm run preview # 프로덕션 프리뷰(4178)
 ## 자동화(GitHub Actions)
 
 - `deploy.yml` — main push·데이터 워크플로 완료 시 Pages 배포.
-- `refresh-history.yml` — 30분마다 공개 실시간 API를 호출해 `data/realtime-history.json`에
-  측정값 축적(키 불필요).
+- `refresh-history.yml` — 30분마다 공개 실시간 API를 호출해 `public/data/realtime-history.json`에
+  측정값 축적(키 불필요). 홈 '최근 24시간 추이' 패널의 데이터.
 - `aggregate-2025.yml` — 수동 실행. `KSPONCO_LINK_API_KEY` 시크릿으로 연계 데이터를 전수
   수집·집산해 `public/data/pattern-2025.json` 갱신(원문 저장 없음, 집산물만).
 - `aggregate-008.yml` — 수동 실행. `KSPONCO_ENTRY_API_KEY` 시크릿으로 입출차 약 240만 건을

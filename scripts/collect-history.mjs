@@ -1,10 +1,10 @@
-// 키 불필요 공개 실시간 API → data/realtime-history.json 한 줄 추가(최근 2,000포인트 유지).
+// 키 불필요 공개 실시간 API → public/data/realtime-history.json 한 줄 추가(최대 2,000포인트 유지).
 // 원문은 저장하지 않고 {시각, 주차대수} 측정값만 남긴다.
 import { readdirSync, readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 const API_URL =
   process.env.PARKING_API_URL?.trim() ||
   'https://www.ksponco.or.kr/online/main/parkingorsApi.do?apiKey=PARKING21803504';
-const FILE = 'data/realtime-history.json';
+const FILE = 'public/data/realtime-history.json';
 const MAX_POINTS = 2000;
 
 async function fetchParking() {
@@ -30,7 +30,7 @@ let points = [];
 try {
   points = JSON.parse(readFileSync(FILE, 'utf8'));
 } catch {
-  mkdirSync('data', { recursive: true });
+  mkdirSync('public/data', { recursive: true });
 }
 if (!Array.isArray(points)) points = [];
 points.push(point);

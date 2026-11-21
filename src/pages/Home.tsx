@@ -3,9 +3,22 @@ import GaugePanel from '../components/Gauge';
 import Sparkline from '../components/Sparkline';
 import { ChevronIcon } from '../components/Icons';
 import { POLL_MS, useParking } from '../hooks/useParking';
+import RecentTrend from '../components/RecentTrend';
+import { useRecentHistory } from '../hooks/useRecent';
+import { downsample, mergeLivePoint, windowRecent } from '../lib/recent';
 
 export default function Home() {
   const { snapshot, history, loading, error, refresh } = useParking();
+  const recent = useRecentHistory();
+  const recentPoints =
+    recent.status === 'ready'
+      ? downsample(
+          mergeLivePoint(
+            windowRecent(recent.data),
+            snapshot ? { t: snapshot.fetchedAt, count: snapshot.parkedTotal } : null,
+          ),
+        )
+      : [];
 
   return (
     <div className="home">
@@ -44,6 +57,23 @@ export default function Home() {
         </p>
       )}
 
+      {recent.status === 'ready' && (
+        <section className="panel" aria-labelledby="recent-title">
+          <div className="panel-head">
+            <h2 id="recent-title">최근 24시간 추이</h2>
+            <span className="muted">30분 간격 수집</span>
+          </div>
+          <RecentTrend points={recentPoints} />
+          <p className="muted small">
+            실시간 주차현황을 30분마다 기록한 값입니다. 페이지를 닫아도 계속 쌓입니다.
+          </p>
+        </section>
+      )}
+      {recent.status === 'error' && (
+        <p role="status" className="notice">
+          최근 24시간 추이를 불러오지 못했습니다 ({recent.message}).
+        </p>
+      )}
       <section className="panel" aria-labelledby="trend-title">
         <div className="panel-head">
           <h2 id="trend-title">방문 중 추이</h2>
