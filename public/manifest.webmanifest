@@ -1,0 +1,17 @@
+{
+  "name": "올팍 골든타임",
+  "short_name": "골든타임",
+  "description": "올림픽공원 실시간 주차 혼잡 확인 서비스",
+  "start_url": "/ksponco-goldentime/",
+  "scope": "/ksponco-goldentime/",
+  "display": "standalone",
+  "background_color": "#f7f8fa",
+  "theme_color": "#1a56db",
+  "icons": [
+    {
+      "src": "/ksponco-goldentime/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

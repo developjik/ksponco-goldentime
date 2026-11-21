@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <title>올팍 골든타임</title>
+    <script>
+      // GitHub Pages SPA 폴백: pathname 라우팅(/predict 등)을 위해
+      // 존재하지 않는 경로로의 요청은 이 404.html이 서빙된다.
+      // 현재 pathname+search를 ?r= 파라미터로 루트(index.html)에 넘기고,
+      // index.html 부트스트랩이 history.replaceState로 원래 URL을 복원한다.
+      (function () {
+        var l = window.location;
+        // ?r=가 이미 있으면 리다이렉트하지 않는다 — 404.html 자신을
+        // 다시 루트로 보내는 무한루프를 막는다.
+        if (l.search.indexOf('?r=') === 0 || l.search.indexOf('&r=') !== -1) {
+          return;
+        }
+        var base = l.pathname.split('/').slice(0, 2).join('/'); // /ksponco-goldentime
+        l.replace(
+          l.protocol +
+            '//' +
+            l.host +
+            base +
+            '/?r=' +
+            encodeURIComponent(l.pathname + l.search) +
+            l.hash
+        );
+      })();
+    </script>
+  </head>
+  <body></body>
+</html>
