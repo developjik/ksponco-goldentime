@@ -59,7 +59,7 @@ export default function Home() {
       <Link to="/predict" className="row-link">
         <span>
           <strong>골든타임 예측·히트맵</strong>
-          <span className="muted small">학습 데이터 확보 완료 — 히트맵·예측 준비 중</span>
+          <span className="muted small">2025년 실측 기반 — 요일별 골든타임·히트맵 보기</span>
         </span>
         <ChevronIcon />
       </Link>

@@ -46,9 +46,9 @@ export default function Guide() {
           <div className="source-row">
             <dt>예측·히트맵</dt>
             <dd>
-              공공데이터포털 「한국체육산업개발주식회사_실시간 주차현황」 입출차·연계 데이터로
-              준비 중.{' '}
-              <Link to="/predict">준비 상황 보기</Link>.
+              공공데이터포털 「한국체육산업개발주식회사_실시간 주차현황」 시간별 연계 데이터(2025년
+              7,803건)를 요일×시간 평균으로 집산해{' '}
+              <Link to="/predict">골든타임 예측·히트맵</Link>을 제공합니다.
             </dd>
           </div>
         </dl>
