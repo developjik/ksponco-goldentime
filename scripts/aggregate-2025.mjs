@@ -75,7 +75,9 @@ for (let pageNo = 1; pageNo <= 30; pageNo += 1) {
   }
   skipped = 0;
   for (const item of items) {
-    const desc = parseFields(field(item, 'DESCRIPTION'));
+    const desc = parseFields(
+      field(item, 'DESCRIPTION').replace(/^\s*<!\[CDATA\[/, '').replace(/\]\]>\s*$/, ''),
+    );
     const parked = Number(String(desc['주차대수'] ?? '').replace(/[^0-9]/g, ''));
     const when = field(item, 'ISSUED_DATE') || field(item, 'TITLE'); // '2025-08-24 13:00'류
     const m = when.match(/(20\d{2})-(\d{2})-(\d{2})[T ](\d{2})/);
@@ -90,7 +92,7 @@ for (let pageNo = 1; pageNo <= 30; pageNo += 1) {
   }
   console.log(`page ${pageNo}: ${items.length} items`);
   if (items.length < NUM_OF_ROWS) break; // 마지막 페이지
-  await new Promise((r) => setTimeout(r, 1500)); // 게이트웨이 429 방지 스로틀
+  await new Promise((r) => setTimeout(r, 2500)); // 게이트웨이 제한 1req/2s — 여유 스로틀
 }
 
 if (total < 3000) throw new Error(`records too few: ${total} — abort`);
