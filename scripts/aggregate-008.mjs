@@ -10,8 +10,8 @@ if (!KEY) {
   console.error('KSPONCO_ENTRY_API_KEY 시크릿이 없습니다');
   process.exit(1);
 }
-const NUM_OF_ROWS = 5000;
-const MAX_PAGES = 600; // 5000×600=300만 > 241만 안전 상한
+const NUM_OF_ROWS = 2000; // 5천건은 게이트웨이 500 폭주 — 2천건이 총 소요 더 짧음
+const MAX_PAGES = 1400; // 2000×1400=280만 > 241만 안전 상한
 
 function parseFields(text) {
   const clean = String(text ?? '')
@@ -47,6 +47,7 @@ function dwellMin(entry, exit) {
   return min >= 0 && min <= 4320 ? min : null; // 음수·3일+ 방치 제외
 }
 
+/** 페이지 1회 분량 조회. 끝까지 실패하면 null(건너뜀) — 240만건 전체를 한 페이지 실패로 버리지 않는다. */
 async function fetchPage(pageNo) {
   const url = `${API}?serviceKey=${encodeURIComponent(KEY)}&numOfRows=${NUM_OF_ROWS}&pageNo=${pageNo}`;
   for (let attempt = 0; attempt < 5; attempt += 1) {
@@ -58,31 +59,40 @@ async function fetchPage(pageNo) {
           await new Promise((r) => setTimeout(r, 8000 * (attempt + 1)));
           continue;
         }
-        throw new Error(`page ${pageNo}: HTTP ${res.status}`);
+        console.log(`page ${pageNo}: HTTP ${res.status} after retries — skip`);
+        return null;
       }
       xml = await res.text();
-    } catch (e) {
-      if (String(e.message).startsWith('page ')) throw e;
+    } catch {
       if (attempt < 4) {
         await new Promise((r) => setTimeout(r, 8000 * (attempt + 1)));
         continue;
       }
-      throw new Error(`page ${pageNo}: network error`);
+      console.log(`page ${pageNo}: network error after retries — skip`);
+      return null;
     }
     if (xml.includes('<resultCode>0000</resultCode>') || xml.includes('"resultCode":"0000"')) {
       return [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].map((m) => m[1]);
     }
     await new Promise((r) => setTimeout(r, 8000 * (attempt + 1)));
   }
-  throw new Error(`page ${pageNo}: resultCode not 0000 after retries`);
+  console.log(`page ${pageNo}: resultCode not 0000 after retries — skip`);
+  return null;
 }
 
 // 게이트명 → [요일][시간] { e: 입차건수, ds: 체류합(분), dc: 체류표본 }
 const gates = new Map();
 let records = 0;
+let badPages = 0; // 연속 실패 페이지 — 8연속이면 게이트웨이 장애로 중단
 
 for (let pageNo = 1; pageNo <= MAX_PAGES; pageNo += 1) {
   const items = await fetchPage(pageNo);
+  if (items === null) {
+    badPages += 1;
+    if (badPages >= 8) throw new Error('gateway down: 8 consecutive page failures');
+    continue; // 한 페이지 건너뛰고 계속 — 2천건/페이지 기준 손실 0.08%
+  }
+  badPages = 0;
   if (items.length === 0) break; // 끝
   for (const item of items) {
     const desc = parseFields(field(item, 'DESCRIPTION'));
