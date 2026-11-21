@@ -1,0 +1,34 @@
+name: Aggregate 2025 gates
+
+# 공공데이터포털 API_CPM_008(입출차 전체구역, 약 241만 건)를 전수 수집해
+# 게이트×요일×시간 입차 건수·평균 체류시간으로 집산, public/data/gates-2025.json 커밋.
+# KSPONCO_ENTRY_API_KEY 시크릿 필요(평문 금지). 483페이지 × 2.5초 ≈ 40분+ 소요.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: aggregate-008
+  cancel-in-progress: false
+
+jobs:
+  aggregate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/aggregate-008.mjs
+        env:
+          KSPONCO_ENTRY_API_KEY: ${{ secrets.KSPONCO_ENTRY_API_KEY }}
+      - name: Commit gates data
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add public/data/gates-2025.json
+          git diff --cached --quiet || git commit -m 'feat: 2025년 게이트별 입출차 집산 갱신'
+          git push

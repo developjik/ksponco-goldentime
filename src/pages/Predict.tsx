@@ -1,6 +1,9 @@
 import Heatmap from '../components/Heatmap';
+import { useGates } from '../hooks/useGates';
 import { usePattern } from '../hooks/usePattern';
 import { formatCount } from '../lib/congestion';
+import { WEEKDAY_LABELS as DAY, formatDwell, summarizeGates } from '../lib/gates';
+import type { GatesData } from '../lib/gates';
 import {
   WEEKDAY_LABELS,
   goldenTime,
@@ -10,6 +13,7 @@ import {
 
 export default function Predict() {
   const patternState = usePattern();
+  const gatesState = useGates();
 
   return (
     <div className="home">
@@ -23,6 +27,8 @@ export default function Predict() {
           주세요.
         </p>
       )}
+
+      {gatesState.status === 'ready' && <GatePanel data={gatesState.data} />}
 
       {patternState.status === 'absent' && <Preparing />}
 
@@ -130,5 +136,36 @@ function Ready({ data }: { data: ParkingPattern }) {
         </p>
       </section>
     </>
+  );
+}
+
+function GatePanel({ data }: { data: GatesData }) {
+  const rows = summarizeGates(data);
+  return (
+    <section className="panel" aria-labelledby="gate-title">
+      <div className="panel-head">
+        <h2 id="gate-title">어느 문으로 들어올까?</h2>
+      </div>
+      <p className="muted small">
+        {data.year}년 실제 입차 {formatCount(data.records)}건에서 뽑은 게이트별 유입 양상입니다.
+      </p>
+      <ul className="data-list">
+        {rows.map((g) => (
+          <li className="gate-row" key={g.name}>
+            <span className="gate-name">{g.name}</span>
+            <span className="gate-figures">
+              입차 비중 {g.sharePercent}% · 피크 {DAY[g.peak.weekday]}요일 {g.peak.hour}시
+              {g.avgDwellMin !== null && <> · 평균 체류 {formatDwell(g.avgDwellMin)}</>}
+            </span>
+            <span className="gate-share-bar" aria-hidden="true">
+              <i style={{ width: `${g.sharePercent}%` }} />
+            </span>
+          </li>
+        ))}
+      </ul>
+      <p className="muted small">
+        출처: {data.source}. 차로 번호·버스 전용(CMB) 입구는 같은 문으로 합쳤습니다.
+      </p>
+    </section>
   );
 }
