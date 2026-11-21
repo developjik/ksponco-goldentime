@@ -37,8 +37,18 @@ export function parseParkingSum(data: unknown): number {
   return Math.floor(n);
 }
 
-/** 실시간 주차현황 1회 조회. */
+/** 실시간 주차현황 1회 조회. 게이트웨이가 간헐 실패·빈응답을 주므로 1회 재시도한다. */
 export async function fetchParkingNow(signal?: AbortSignal): Promise<ParkingSnapshot> {
+  try {
+    return await fetchParkingOnce(signal);
+  } catch (e) {
+    if (e instanceof DOMException && e.name === 'AbortError') throw e;
+    return await fetchParkingOnce(signal);
+  }
+}
+
+/** 재시도 없는 1회 조회(내부용). */
+async function fetchParkingOnce(signal?: AbortSignal): Promise<ParkingSnapshot> {
   let res: Response;
   try {
     res = await fetch(PARKING_API_URL, { signal, cache: 'no-store' });

@@ -3,6 +3,13 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
+  # 데이터 워크플로 완료 시에도 배포 — GITHUB_TOKEN push는 push 이벤트를
+  # 트리거하지 않으므로(재귀 방지) workflow_run 완료로 배포를 연결한다.
+  # 커밋이 없는 실행도 트리거되지만 checkout은 default branch라 결과는 동일하다.
+  workflow_run:
+    workflows: ['Refresh realtime history', 'Aggregate 2025 pattern']
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -16,6 +23,8 @@ concurrency:
 
 jobs:
   build:
+    # workflow_run으로 깨어난 경우는 데이터 워크플로 성공 시에만 배포한다.
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

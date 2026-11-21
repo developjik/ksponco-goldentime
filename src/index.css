@@ -610,6 +610,144 @@ a:hover {
   background: var(--ink);
 }
 
+/* ── 예측: 실데이터 히트맵 ────────────────────────────── */
+.heatmap-grid {
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.heatmap-row-live {
+  display: grid;
+  grid-template-columns: 20px repeat(24, minmax(11px, 1fr));
+  gap: 2px;
+  margin-bottom: 2px;
+}
+
+.heatmap-day {
+  font-size: 0.72rem;
+  color: var(--muted);
+  align-self: center;
+  text-align: center;
+}
+
+.heatmap-cell-live {
+  aspect-ratio: 1;
+  border-radius: 2px;
+  min-width: 11px;
+}
+
+.heatmap-cell-live.hm-good {
+  background: #9fd6b4;
+}
+
+.heatmap-cell-live.hm-normal {
+  background: #f2d78d;
+}
+
+.heatmap-cell-live.hm-busy {
+  background: #f0b285;
+}
+
+.heatmap-cell-live.hm-severe {
+  background: #e58f8f;
+}
+
+.heatmap-cell-live.hm-none {
+  background: #f0efeb;
+}
+
+.heatmap-hours {
+  display: grid;
+  grid-template-columns: 20px repeat(24, minmax(11px, 1fr));
+  gap: 2px;
+  font-size: 0.62rem;
+  color: var(--muted);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.heatmap-legend {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  font-size: 0.78rem;
+  color: var(--text);
+}
+
+.heatmap-legend .dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 4px;
+  vertical-align: -1px;
+  border-radius: 2px;
+}
+
+.dot.hm-good {
+  background: #9fd6b4;
+}
+
+.dot.hm-normal {
+  background: #f2d78d;
+}
+
+.dot.hm-busy {
+  background: #f0b285;
+}
+
+.dot.hm-severe {
+  background: #e58f8f;
+}
+
+/* ── 골든타임 리스트 ─────────────────────────────────── */
+.best-overall {
+  margin: 2px 0 10px;
+  font-size: 0.95rem;
+}
+
+.best-overall strong {
+  color: var(--gold-deep);
+  font-weight: 800;
+}
+
+.golden-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.golden-list li {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line);
+  font-variant-numeric: tabular-nums;
+}
+
+.golden-list li:last-child {
+  border-bottom: none;
+}
+
+.golden-day {
+  width: 44px;
+  font-weight: 700;
+}
+
+.golden-hour {
+  font-weight: 800;
+  color: var(--gold-deep);
+  font-size: 1.05rem;
+}
+
+.golden-avg {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
 /* ── 안내: 출처·단계 ──────────────────────────────────── */
 .source-list {
   margin: 4px 0 8px;

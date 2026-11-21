@@ -1,5 +1,35 @@
-import { describe, expect, it } from 'vitest';
-import { ParkingApiError, PARKING_API_URL, parseParkingSum } from './parking';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { ParkingApiError, PARKING_API_URL, fetchParkingNow, parseParkingSum } from './parking';
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
+describe('fetchParkingNow — 재시도', () => {
+  it('첫 호출이 실패해도 1회 재시도로 복구한다', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockRejectedValueOnce(new TypeError('network down'))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify([{ parking_sum: 2008 }]), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      );
+    vi.stubGlobal('fetch', fetchMock);
+    const snap = await fetchParkingNow();
+    expect(snap.parkedTotal).toBe(2008);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('두 번 다 실패하면 사용자 친화적 오류로 바꾼다', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockRejectedValue(new TypeError('network down')),
+    );
+    await expect(fetchParkingNow()).rejects.toThrow(ParkingApiError);
+  });
+});
 
 describe('parseParkingSum — API 응답 검증', () => {
   it('정상 응답 [{parking_sum: 2008}]에서 숫자를 꺼낸다', () => {
