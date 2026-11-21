@@ -23,18 +23,36 @@ function parseFields(text) {
 
 async function fetchPage(pageNo, numOfRows) {
   const url = `${API}?serviceKey=${encodeURIComponent(KEY)}&numOfRows=${numOfRows}&pageNo=${pageNo}`;
-  for (let attempt = 0; attempt < 4; attempt += 1) {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const xml = await res.text();
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    let xml = '';
+    try {
+      const res = await fetch(url);
+      if (!res.ok) {
+        // 429(과다)·5xx는 백오프 후 재시도, 그 외 오류도 재시도 1회 포함해 무시한다
+        if (attempt < 4) {
+          await new Promise((r) => setTimeout(r, 8000 * (attempt + 1)));
+          continue;
+        }
+        console.log(`page ${pageNo}: HTTP ${res.status} after retries — skip`);
+        return [];
+      }
+      xml = await res.text();
+    } catch {
+      if (attempt < 4) {
+        await new Promise((r) => setTimeout(r, 8000 * (attempt + 1)));
+        continue;
+      }
+      console.log(`page ${pageNo}: network error after retries — skip`);
+      return [];
+    }
     // resultCode 0000 확인(빈 items/에러 재시도 대상)
     if (xml.includes('<resultCode>0000</resultCode>') || xml.includes('"resultCode":"0000"')) {
       const items = [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].map((m) => m[1]);
       return items;
     }
-    await new Promise((r) => setTimeout(r, 4000 * (attempt + 1)));
+    await new Promise((r) => setTimeout(r, 8000 * (attempt + 1)));
   }
-  return []; // 4회 모두 실패한 페이지는 건너뜀(로그로 남김)
+  return []; // 5회 모두 실패한 페이지는 건너뜀(로그로 남김)
 }
 
 function field(item, name) {
@@ -72,6 +90,7 @@ for (let pageNo = 1; pageNo <= 30; pageNo += 1) {
   }
   console.log(`page ${pageNo}: ${items.length} items`);
   if (items.length < NUM_OF_ROWS) break; // 마지막 페이지
+  await new Promise((r) => setTimeout(r, 1500)); // 게이트웨이 429 방지 스로틀
 }
 
 if (total < 3000) throw new Error(`records too few: ${total} — abort`);
