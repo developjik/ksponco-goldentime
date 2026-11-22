@@ -6,6 +6,9 @@
 - 서비스: <https://developjik.github.io/ksponco-goldentime/>
 - 기술: Vite 5 · React 18 · TypeScript, GitHub Actions로 GitHub Pages 배포
 
+![서비스 스크린샷](docs/screenshot-home.png)
+
+
 ## 기능
 
 - **실시간**: 한국체육산업개발(주) 공개 실시간 주차현황 API를 60초 간격으로 조회해 빈 자리
@@ -50,3 +53,8 @@ npm run preview # 프로덕션 프리뷰(4178)
 - `aggregate-008.yml` — 수동 실행. `KSPONCO_ENTRY_API_KEY` 시크릿으로 입출차 약 240만 건을
   전수 수집해 게이트×요일×시간으로 집산, `public/data/gates-2025.json` 갱신(원문 저장 없음,
   집산물만. 40분 이상 소요).
+
+## 라이선스
+
+이 저장소의 코드는 MIT 라이선스입니다 — 자세한 내용은 [LICENSE](LICENSE)를 참고하세요.
+데이터는 각 출처(한국체육산업개발(주) 실시간 주차현황 · 공공데이터포털 · 올림픽공원 홈페이지)의 이용 정책을 따릅니다.
