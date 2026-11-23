@@ -29,9 +29,9 @@ export interface GatesData {
 
 export const WEEKDAY_LABELS = ['월', '화', '수', '목', '금', '토', '일'] as const;
 
-/** '입구:동2문입구#1' · '입구:남2문CMB' → 정규 게이트명('동2문'·'남2문'). */
+/** '입구:동2문입구#1' · '남2문CMB'(접두 생략) → 정규 게이트명('동2문'·'남2문'). */
 export function normalizeGateName(rawEntry: string): string | null {
-  const m = rawEntry.match(/^입구:([가-힣0-9]+?)문(?:입구|CMB)/);
+  const m = rawEntry.trim().replace(/^입구\s*[:：]\s*/, '').match(/^([가-힣0-9]+?)문(?:입구|CMB)/);
   if (!m) return null;
   return `${m[1]}문`;
 }

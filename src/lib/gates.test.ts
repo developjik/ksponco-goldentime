@@ -17,6 +17,11 @@ describe('normalizeGateName', () => {
     expect(normalizeGateName('입구:북2문입구#3')).toBe('북2문');
   });
 
+  it('입구: 접두가 빠진 값(DESCRIPTION 파싱 결과)도 받는다', () => {
+    expect(normalizeGateName('동2문입구#1')).toBe('동2문');
+    expect(normalizeGateName('남2문CMB')).toBe('남2문');
+  });
+
   it('게이트가 아니면 null', () => {
     expect(normalizeGateName('출구:동2문출구#1')).toBeNull();
     expect(normalizeGateName('')).toBeNull();
