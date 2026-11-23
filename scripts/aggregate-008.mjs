@@ -50,16 +50,22 @@ const started = Date.now();
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const elapsed = () => `${Math.round((Date.now() - started) / 60000)}분`;
 
-// 전역 요청 시작 간격 — 동시 요청이어도 시작은 MIN_INTERVAL_MS 간격. 429/5xx는 전체 쿨다운.
+// 전역 요청 시작 간격 — 동시 요청이어도 시작은 MIN_INTERVAL_MS 간격. 429/5xx는 전체 쿨다운:
+// 이미 슬롯을 예약하고 자던 워커도 깨어나서 쿨다운 중이면 다시 기다린다.
 let nextSlot = 0;
+let cooldownUntil = 0;
+const httpErrors = {}; // 재시도 포함 오류 응답 수(상태별) — 게이트웨이 제한 진단용
 async function takeSlot() {
-  const now = Date.now();
-  const at = Math.max(now, nextSlot);
-  nextSlot = at + MIN_INTERVAL_MS;
-  if (at > now) await sleep(at - now);
+  for (;;) {
+    const now = Date.now();
+    const at = Math.max(now, nextSlot, cooldownUntil);
+    nextSlot = at + MIN_INTERVAL_MS;
+    if (at > now) await sleep(at - now);
+    if (Date.now() >= cooldownUntil) return;
+  }
 }
 function cooldown(ms) {
-  nextSlot = Math.max(nextSlot, Date.now() + ms);
+  cooldownUntil = Math.max(cooldownUntil, Date.now() + ms);
 }
 
 /** 페이지 1회 조회(5회 재시도). 끝까지 실패하면 null. */
@@ -72,6 +78,7 @@ async function fetchPage(pageNo) {
       const res = await fetch(url, { signal: AbortSignal.timeout(120_000) });
       if (!res.ok) {
         last = `HTTP ${res.status}`;
+        httpErrors[res.status] = (httpErrors[res.status] ?? 0) + 1;
         cooldown(8000 * (attempt + 1));
         continue;
       }
@@ -145,7 +152,9 @@ if (DRY_RUN_PAGES > 0) {
     .sort((a, b) => b[1] - a[1]);
   console.log(`dry-run ${DRY_RUN_PAGES} pages: cumulated ${agg.records} records, skipped ${JSON.stringify(agg.skipped)}`);
   console.log(`gates: ${gates.map(([n, c]) => `${n}=${c}`).join(', ')}`);
-  console.log(`elapsed ${((Date.now() - started) / 1000).toFixed(1)}s (concurrency ${CONCURRENCY})`);
+  console.log(
+    `elapsed ${((Date.now() - started) / 1000).toFixed(1)}s (concurrency ${CONCURRENCY}, interval ${MIN_INTERVAL_MS}ms), http errors ${JSON.stringify(httpErrors)}`,
+  );
   if (agg.records === 0) throw contractError(agg, sample);
   process.exit(0);
 }
@@ -195,7 +204,9 @@ await runPool(
       return false;
     }
     if (processed % 25 === 0) {
-      console.log(`pages ${cp.done.size}/${cp.totalPages}: cumulated ${cp.agg.records} records (${elapsed()})`);
+      console.log(
+        `pages ${cp.done.size}/${cp.totalPages}: cumulated ${cp.agg.records} records (${elapsed()}, http errors ${JSON.stringify(httpErrors)})`,
+      );
       saveCheckpoint(cp);
     }
     return true;
