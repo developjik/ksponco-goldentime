@@ -134,7 +134,7 @@ function Ready({ data, history }: { data: ParkingPattern; history: RecentState }
         </ul>
       </section>
 
-      <AccuracyCard result={result} year={data.year} />
+      <AccuracyCard result={result} year={data.year} historyLoading={history.status === 'loading'} />
 
       <section className="panel" aria-labelledby="map-title">
         <div className="panel-head">

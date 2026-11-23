@@ -13,10 +13,12 @@ export interface AccuracyCardProps {
   /** null = 실측 이력을 아직 못 불러옴(로딩·없음·오류) — "검증 중"으로 그린다 */
   result: BacktestResult | null;
   year: number;
+  /** result가 null일 때 실측 이력을 아직 불러오는 중인지(false면 이력 없음·오류) */
+  historyLoading?: boolean;
 }
 
 /** 예측 정확도 카드: 백테스트 지표 + 선택 요일의 예측(선) vs 실측(점) 작은 차트. */
-export default function AccuracyCard({ result, year }: AccuracyCardProps) {
+export default function AccuracyCard({ result, year, historyLoading = false }: AccuracyCardProps) {
   const [picked, setPicked] = useState<number | null>(null);
   const verifying = !result || result.status === 'verifying';
   const weekday = picked ?? (result ? defaultWeekday(result) : null);
@@ -83,7 +85,7 @@ export default function AccuracyCard({ result, year }: AccuracyCardProps) {
       )}
 
       <p className="muted small">
-        {result ? summaryLine(result, year) : `${year}년 패턴 예측 검증 중 — 실측 이력을 불러오는 중입니다.`} 회색은 표본
+        {result ? summaryLine(result, year) : `${year}년 패턴 예측 검증 중 — ${historyLoading ? '실측 이력을 불러오는 중입니다.' : '실측 이력이 아직 없습니다.'}`} 회색은 표본
         부족(칸당 30분 수집 {MIN_CELL_SAMPLES}회 미만)으로 채점에서 뺀 구간입니다.
       </p>
     </section>
