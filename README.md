@@ -52,7 +52,12 @@ npm run preview # 프로덕션 프리뷰(4178)
   수집·집산해 `public/data/pattern-2025.json` 갱신(원문 저장 없음, 집산물만).
 - `aggregate-008.yml` — 수동 실행. `KSPONCO_ENTRY_API_KEY` 시크릿으로 입출차 약 240만 건을
   전수 수집해 게이트×요일×시간으로 집산, `public/data/gates-2025.json` 갱신(원문 저장 없음,
-  집산물만. 40분 이상 소요).
+  집산물만). 잡 제한(5시간)을 넘지 않도록 `time_budget_minutes`(기본 260분)에 멈추고
+  체크포인트(`data/gates-2025.checkpoint.json`, 완료 페이지·집산 합만)를 커밋한 뒤 같은
+  워크플로를 다시 디스패치해 이어받는다(`auto_continue`·`chain_left`). 요청 시작 간격 2.5초를
+  지키며 `concurrency`개(기본 4)를 동시에 띄운다. `dry_run_pages`(예: 5)로 커밋 없이 누적 건수만
+  확인할 수 있고, `reset`은 체크포인트를 버리고 처음부터 수집한다. 로컬 드라이런:
+  `DRY_RUN_PAGES=5 KSPONCO_ENTRY_API_KEY=… node scripts/aggregate-008.mjs`.
 
 ## 라이선스
 
