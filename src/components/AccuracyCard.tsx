@@ -70,7 +70,7 @@ export default function AccuracyCard({ result, year }: AccuracyCardProps) {
         </>
       ) : (
         <p className="muted small acc-empty">
-          30분마다 쌓이는 실측이 운영시간(06~21시) 칸마다 {MIN_CELL_SAMPLES}회 이상 모이면 예측과 비교한
+          30분마다 쌓이는 실측이 운영시간(06~21시) 칸마다 서로 다른 수집 {MIN_CELL_SAMPLES}회 이상 모이면 예측과 비교한
           정확도가 이 자리에 표시됩니다.
         </p>
       )}
@@ -84,7 +84,7 @@ export default function AccuracyCard({ result, year }: AccuracyCardProps) {
 
       <p className="muted small">
         {result ? summaryLine(result, year) : `${year}년 패턴 예측 검증 중 — 실측 이력을 불러오는 중입니다.`} 회색은 표본
-        부족(칸당 실측 {MIN_CELL_SAMPLES}회 미만)으로 채점에서 뺀 구간입니다.
+        부족(칸당 30분 수집 {MIN_CELL_SAMPLES}회 미만)으로 채점에서 뺀 구간입니다.
       </p>
     </section>
   );
@@ -134,7 +134,7 @@ function MiniChart({ cells, weekday }: { cells: BacktestCell[]; weekday: number 
               className={c.scored ? 'acc-meas' : 'acc-meas is-gray'}
             >
               <title>
-                {`${c.hour}시 — 예측 ${c.predicted === null ? '-' : Math.round(c.predicted)}% · 실측 ${Math.round(c.measured as number)}% (표본 ${c.samples})`}
+                {`${c.hour}시 — 예측 ${c.predicted === null ? '-' : Math.round(c.predicted)}% · 실측 ${Math.round(c.measured as number)}% (측정 ${c.samples}회·30분 슬롯 ${c.slots}개)`}
               </title>
             </circle>
           ))}

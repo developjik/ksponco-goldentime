@@ -61,7 +61,7 @@ describe('kstSlot — 브라우저 시간대와 무관한 KST 칸', () => {
 describe('measuredWeekdayHour', () => {
   it('칸별 평균·표본 수를 낸다', () => {
     const grid = measuredWeekdayHour([...slot(2, 9, 1000, 1), ...slot(2, 9, 2000, 1, 1)]);
-    expect(grid[2][9]).toEqual({ avg: 1500, samples: 2 });
+    expect(grid[2][9]).toEqual({ avg: 1500, samples: 2, slots: 2 });
     expect(grid[2][10]).toBeNull();
   });
   it('잘못된 값은 건너뛴다', () => {
@@ -102,6 +102,18 @@ describe('backtest', () => {
     expect(c9).toMatchObject({ samples: 1, scored: false });
     expect(c10).toMatchObject({ samples: 2, scored: true });
     expect(r.n).toBe(2);
+  });
+
+  it('같은 30분 슬롯 안 연속 측정은 슬롯 하나로 센다(채점 제외)', () => {
+    const base = MON_KST + 5 * DAY + 21 * HOUR + 41 * 60_000; // 토 21:41 KST
+    const clustered = [0, 3, 3.5].map((m) => ({ t: base + m * 60_000, count: 1200 }));
+    const r = backtest(fixture(), clustered);
+    expect(r.cells.find((c) => c.weekday === 5 && c.hour === 21)).toMatchObject({
+      samples: 3,
+      slots: 1,
+      scored: false,
+    });
+    expect(r.n).toBe(0);
   });
 
   it('운영시간 밖 측정은 채점하지 않는다', () => {

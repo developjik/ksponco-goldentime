@@ -9,7 +9,10 @@ import { OPEN_HOUR_END, OPEN_HOUR_START, type ParkingPattern } from './pattern';
 /** 한국 표준시(UTC+9, 서머타임 없음) — 브라우저 시간대와 무관하게 칸을 나눈다. */
 export const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
 
-/** 칸 하나가 채점에 들어가는 최소 실측 수(30분 수집 기준 한 시간치). */
+/** 30분 수집 슬롯 길이 — 같은 슬롯 안 연속 측정(수동 재실행 등)은 한 번으로 센다. */
+export const SLOT_MS = 30 * 60 * 1000;
+
+/** 칸 하나가 채점에 들어가는 최소 30분 슬롯 수(한 시간치). */
 export const MIN_CELL_SAMPLES = 2;
 
 /** 정확도 숫자를 보여주는 최소 채점 칸 수(운영시간 하루치 16칸의 절반 이상). */
@@ -23,6 +26,8 @@ export interface MeasuredCell {
   avg: number;
   /** 칸 안 실측 수 */
   samples: number;
+  /** 칸 안 서로 다른 30분 슬롯 수 */
+  slots: number;
 }
 
 export interface KstSlot {
@@ -45,14 +50,20 @@ export function kstSlot(t: number): KstSlot {
 
 /** 실측 이력 → [요일][시간] 칸 평균. 측정이 없는 칸은 null. */
 export function measuredWeekdayHour(points: HistoryPoint[]): (MeasuredCell | null)[][] {
-  const sum = Array.from({ length: 7 }, () => Array.from({ length: 24 }, () => [0, 0]));
+  const sum = Array.from({ length: 7 }, () =>
+    Array.from({ length: 24 }, () => ({ s: 0, n: 0, slots: new Set<number>() })),
+  );
   for (const p of points) {
     if (!Number.isFinite(p.t) || !Number.isFinite(p.count) || p.count < 0) continue;
     const { weekday, hour } = kstSlot(p.t);
-    sum[weekday][hour][0] += p.count;
-    sum[weekday][hour][1] += 1;
+    const cell = sum[weekday][hour];
+    cell.s += p.count;
+    cell.n += 1;
+    cell.slots.add(Math.floor(p.t / SLOT_MS));
   }
-  return sum.map((hours) => hours.map(([s, n]) => (n > 0 ? { avg: s / n, samples: n } : null)));
+  return sum.map((hours) =>
+    hours.map(({ s, n, slots }) => (n > 0 ? { avg: s / n, samples: n, slots: slots.size } : null)),
+  );
 }
 
 export interface BacktestCell {
@@ -63,7 +74,9 @@ export interface BacktestCell {
   /** 실측 주차율(%) — 측정이 없으면 null */
   measured: number | null;
   samples: number;
-  /** 예측·실측이 모두 있고 표본이 충분해 채점에 들어간 칸 */
+  /** 실측이 걸친 서로 다른 30분 슬롯 수 */
+  slots: number;
+  /** 예측·실측이 모두 있고 슬롯이 충분해 채점에 들어간 칸 */
   scored: boolean;
 }
 
@@ -157,13 +170,15 @@ export function backtest(pattern: ParkingPattern, points: HistoryPoint[]): Backt
       const m = measured[d][h];
       const predicted = p && p.samples > 0 ? pct(p.avg, capacity) : null;
       const samples = m?.samples ?? 0;
+      const slots = m?.slots ?? 0;
       cells.push({
         weekday: d,
         hour: h,
         predicted,
         measured: m ? pct(m.avg, capacity) : null,
         samples,
-        scored: predicted !== null && m !== null && samples >= MIN_CELL_SAMPLES,
+        slots,
+        scored: predicted !== null && m !== null && slots >= MIN_CELL_SAMPLES,
       });
     }
   }
