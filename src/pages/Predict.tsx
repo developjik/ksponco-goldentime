@@ -1,6 +1,10 @@
+import { useMemo } from 'react';
+import AccuracyCard from '../components/AccuracyCard';
 import Heatmap from '../components/Heatmap';
 import { useGates } from '../hooks/useGates';
 import { usePattern } from '../hooks/usePattern';
+import { useRecentHistory, type RecentState } from '../hooks/useRecent';
+import { backtest } from '../lib/backtest';
 import { formatCount } from '../lib/congestion';
 import { WEEKDAY_LABELS as DAY, formatDwell, summarizeGates } from '../lib/gates';
 import type { GatesData } from '../lib/gates';
@@ -14,6 +18,7 @@ import {
 export default function Predict() {
   const patternState = usePattern();
   const gatesState = useGates();
+  const historyState = useRecentHistory();
 
   return (
     <div className="home">
@@ -32,7 +37,7 @@ export default function Predict() {
 
       {patternState.status === 'absent' && <Preparing />}
 
-      {patternState.status === 'ready' && <Ready data={patternState.pattern} />}
+      {patternState.status === 'ready' && <Ready data={patternState.pattern} history={historyState} />}
     </div>
   );
 }
@@ -88,9 +93,13 @@ function Preparing() {
   );
 }
 
-function Ready({ data }: { data: ParkingPattern }) {
+function Ready({ data, history }: { data: ParkingPattern; history: RecentState }) {
   const byWeekday = goldenTimeByWeekday(data, data.capacity);
   const overall = goldenTime(data, 'all', data.capacity);
+  const result = useMemo(
+    () => (history.status === 'ready' ? backtest(data, history.data) : null),
+    [data, history],
+  );
 
   return (
     <>
@@ -124,6 +133,8 @@ function Ready({ data }: { data: ParkingPattern }) {
           ))}
         </ul>
       </section>
+
+      <AccuracyCard result={result} year={data.year} historyLoading={history.status === 'loading'} />
 
       <section className="panel" aria-labelledby="map-title">
         <div className="panel-head">
