@@ -94,11 +94,12 @@ async function fetchPage(pageNo) {
   return null;
 }
 
-/** 큐의 페이지를 CONCURRENCY개 워커로 처리. onPage(p, page|null) → false를 돌려주면 전체 중단. */
-async function runPool(queue, onPage, shouldStop) {
+/** 큐의 페이지를 CONCURRENCY개 워커로 처리. onPage(p, page|null) → false를 돌려주면 전체 중단. skip(p)이면 요청 생략. */
+async function runPool(queue, onPage, shouldStop, skip = () => false) {
   const worker = async () => {
     while (queue.length > 0 && !shouldStop()) {
       const p = queue.shift();
+      if (skip(p)) continue;
       const page = await fetchPage(p);
       if ((await onPage(p, page)) === false) return;
     }
@@ -212,6 +213,7 @@ await runPool(
     return true;
   },
   () => gatewayDown || contractBroken || Date.now() - started > TIME_BUDGET_MS,
+  (p) => p > cp.totalPages, // totalCount 미제공 시 끝 페이지를 찾은 뒤의 요청 생략
 );
 
 if (contractBroken) throw contractError(cp.agg, sample); // 0건 체크포인트는 저장하지 않는다
