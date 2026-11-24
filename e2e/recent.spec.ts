@@ -11,14 +11,15 @@ test('30-minute refresh, hidden pause, resume failure and recovery',async({page}
       state.calls++;
       if(state.mode==='hang')return new Promise<Response>(()=>{});
       if(state.mode==='fail')return Promise.reject(new Error('offline'));
-      const now=Date.now();return Promise.resolve(new Response(JSON.stringify([{t:now-1800000,count:1000},{t:now,count:1200+state.calls}])));
+      const now=Date.now();return Promise.resolve(new Response(JSON.stringify([{t:now-1800000,count:1000},{t:now-1000,count:1800+state.calls}])));
     };
   });
   const calls=()=>page.evaluate(()=> (window as unknown as {recentTest:{calls:number}}).recentTest.calls);
   const mode=async(mode:string,hidden=false)=>page.evaluate(({mode,hidden})=>{Object.assign((window as unknown as {recentTest:object}).recentTest,{mode,hidden});document.dispatchEvent(new Event('visibilitychange'));},{mode,hidden});
   await page.goto('/ksponco-goldentime/');await expect(page.getByText('최근 24시간 추이',{exact:true})).toBeVisible();
   const first=await calls();await page.clock.fastForward(1800001);await expect.poll(calls).toBeGreaterThan(first);
-  await expect(page.locator('.trend').first()).toContainText('측정 3회');
+  const expected = (1800 + await calls()).toLocaleString('en-US');
+  await expect(page.locator('.trend').first()).toContainText(`최대 ${expected}대`);
   await mode('ok',true);const hidden=await calls();await page.clock.fastForward(1800001);expect(await calls()).toBe(hidden);
   await mode('fail');await expect(page.getByRole('status').filter({hasText:'이력 갱신 실패'})).toContainText('마지막 수집');
   await expect(page.locator('.trend').first()).toBeVisible();
