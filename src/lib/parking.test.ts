@@ -79,6 +79,17 @@ describe('PARKING_API_URL 상수', () => {
 });
 
 describe('요청 제한시간과 취소', () => {
+  it('재시도도 최초 요청의 제한시간을 공유한다', async()=>{
+    vi.useFakeTimers();
+    const mock=vi.fn().mockImplementationOnce(()=>new Promise((_,reject)=>setTimeout(()=>reject(new TypeError('network')),90))).mockImplementationOnce(()=>new Promise(()=>{}));
+    vi.stubGlobal('fetch',mock);
+    const pending=fetchParkingNow(undefined,100);
+    const rejected=expect(pending).rejects.toThrow('시간이 초과');
+    await vi.advanceTimersByTimeAsync(90);expect(mock).toHaveBeenCalledTimes(2);
+    await vi.advanceTimersByTimeAsync(10);await rejected;
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
   it('끝나지 않는 fetch도 제한시간 후 해제하고 재시도할 수 있다', async () => {
     vi.useFakeTimers();
     let signal: AbortSignal | undefined;
