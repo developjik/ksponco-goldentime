@@ -5,16 +5,14 @@ import { ChevronIcon } from '../components/Icons';
 import { POLL_MS, useParking } from '../hooks/useParking';
 import RecentTrend from '../components/RecentTrend';
 import { useRecentHistory } from '../hooks/useRecent';
-import { downsample, mergeSessionHistory, windowRecent } from '../lib/recent';
+import { mergeSessionHistory, windowRecent } from '../lib/recent';
 
 export default function Home() {
   const { snapshot, history, loading, error, refresh } = useParking();
   const recent = useRecentHistory();
   const recentPoints =
     recent.status === 'ready'
-      ? downsample(
-          windowRecent(mergeSessionHistory(recent.data, history)),
-        )
+      ? windowRecent(mergeSessionHistory(recent.data, history))
       : [];
 
   return (
@@ -50,7 +48,7 @@ export default function Home() {
 
       {snapshot && error && (
         <p role="status" className="notice">
-          최근 갱신에 실패해 마지막 값을 표시하는 중입니다 ({error}).
+          최근 갱신에 실패해 마지막 값을 표시하는 중입니다 ({error}). 마지막 성공: {new Date(snapshot.fetchedAt).toLocaleTimeString('ko-KR')}.
         </p>
       )}
 
