@@ -69,3 +69,34 @@ export function sparkCoords(
     y: spanY === 0 ? midY : pad + (1 - (p.count - minY) / spanY) * innerH,
   }));
 }
+
+/** 시간 오름차순·동일 시각 마지막 값. 잘못된 수치는 좌표로 내보내지 않는다. */
+export function timePoints(points: HistoryPoint[]): HistoryPoint[] {
+  const unique = new Map<number, HistoryPoint>();
+  for (const p of points) if (Number.isFinite(p.t) && Number.isFinite(p.count)) unique.set(p.t, p);
+  return [...unique.values()].sort((a, b) => a.t - b.t);
+}
+
+/** 실제 경과시간 비율을 x축에 반영한다. 동일 시각/한 점은 중앙이다. */
+export function timeCoords(points: HistoryPoint[], width: number, height: number, pad = 6): Coord[] {
+  const normalized = timePoints(points);
+  const ys = sparkCoords(normalized, width, height, pad);
+  const span = normalized.length ? normalized[normalized.length - 1].t - normalized[0].t : 0;
+  const inner = Math.max(width - 2 * pad, 0);
+  return normalized.map((p, i) => ({
+    x: span === 0 ? width / 2 : pad + ((p.t - normalized[0].t) / span) * inner,
+    y: ys[i].y,
+  }));
+}
+
+/** 수집 예정 간격 30분의 1.5배를 넘으면 연결하지 않는다. */
+export const HISTORY_GAP_MS = 45 * 60 * 1000;
+export function timeSegments(points: HistoryPoint[], gapMs = HISTORY_GAP_MS): HistoryPoint[][] {
+  const segments: HistoryPoint[][] = [];
+  for (const point of timePoints(points)) {
+    const last = segments[segments.length - 1];
+    if (!last || point.t - last[last.length - 1].t > gapMs) segments.push([point]);
+    else last.push(point);
+  }
+  return segments;
+}
