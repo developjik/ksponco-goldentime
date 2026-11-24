@@ -5,7 +5,7 @@ import { ChevronIcon } from '../components/Icons';
 import { POLL_MS, useParking } from '../hooks/useParking';
 import RecentTrend from '../components/RecentTrend';
 import { useRecentHistory } from '../hooks/useRecent';
-import { downsample, mergeLivePoint, windowRecent } from '../lib/recent';
+import { downsample, mergeSessionHistory, windowRecent } from '../lib/recent';
 
 export default function Home() {
   const { snapshot, history, loading, error, refresh } = useParking();
@@ -13,10 +13,7 @@ export default function Home() {
   const recentPoints =
     recent.status === 'ready'
       ? downsample(
-          mergeLivePoint(
-            windowRecent(recent.data),
-            snapshot ? { t: snapshot.fetchedAt, count: snapshot.parkedTotal } : null,
-          ),
+          windowRecent(mergeSessionHistory(recent.data, history)),
         )
       : [];
 
@@ -63,6 +60,11 @@ export default function Home() {
             <h2 id="recent-title">최근 24시간 추이</h2>
             <span className="muted">30분 간격 수집</span>
           </div>
+          {(recent.stale || recent.refreshError) && <p role="status" className="notice">
+            {recent.refreshError ? `이력 갱신 실패 (${recent.refreshError}). ` : '수집 이력이 오래되었습니다. '}
+            마지막 수집: {recent.data.length ? new Date(recent.data[recent.data.length-1].t).toLocaleString('ko-KR') : '기록 없음'}.
+            마지막 성공 이력을 유지합니다.
+          </p>}
           <RecentTrend points={recentPoints} />
           <p className="muted small">
             실시간 주차현황을 30분마다 기록한 값입니다. 페이지를 닫아도 계속 쌓입니다.
