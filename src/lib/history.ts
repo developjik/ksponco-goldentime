@@ -10,8 +10,8 @@ export interface HistoryPoint {
   count: number;
 }
 
-/** 60초 폴링 기준 12시간치 상한. */
-export const MAX_HISTORY = 720;
+/** 60초 폴링 기준 24시간과 양끝점 보존. */
+export const MAX_HISTORY = 1441;
 
 /** 이력에 측정 포인트 추가. 상한 초과분은 오래된 것부터 버린다. */
 export function appendPoint(

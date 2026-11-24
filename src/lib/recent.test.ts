@@ -1,3 +1,4 @@
+import {mergeSessionHistory} from './recent';
 import { describe, expect, it } from 'vitest';
 import type { HistoryPoint } from './history';
 import { downsample, mergeLivePoint, parseRecentHistory, windowRecent } from './recent';
@@ -87,5 +88,11 @@ describe('mergeLivePoint — 실시간 값 병합', () => {
   it('live가 없으면 원본 그대로', () => {
     const pts = [p(10, 1)];
     expect(mergeLivePoint(pts, null)).toBe(pts);
+  });
+});
+
+describe('세션과 서버 이력 병합',()=>{
+  it('누락된 세션점을 보존하며 같은 시각을 중복하지 않는다',()=>{
+    expect(mergeSessionHistory([{t:1,count:10},{t:3,count:30}],[{t:2,count:20},{t:3,count:31}])).toEqual([{t:1,count:10},{t:2,count:20},{t:3,count:31}]);
   });
 });
