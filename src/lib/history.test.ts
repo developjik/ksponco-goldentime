@@ -1,3 +1,4 @@
+import {timeCoords,timePoints,timeSegments} from './history';
 import { describe, expect, it } from 'vitest';
 import { appendPoint, lastChange, netChange, sparkCoords, type HistoryPoint } from './history';
 
@@ -74,5 +75,26 @@ describe('sparkCoords — 스파크라인 좌표', () => {
     expect(coords[0].x).toBeCloseTo(5);
     expect(coords[1].x).toBeCloseTo(55);
     expect(coords[2].x).toBeCloseTo(105);
+  });
+});
+
+describe('실제 경과시간 좌표와 공백',()=>{
+  it('0·30·360분의 중간 점은 그리기 폭의1/12이다',()=>{
+    const coords=timeCoords([{t:0,count:1},{t:30*60000,count:2},{t:360*60000,count:3}],340,120);
+    expect(coords.map(c=>c.x)).toEqual([6,6+328/12,334]);
+  });
+  it('동일 시각은 마지막 값으로 정리하고 한 점은 중앙에 둔다',()=>{
+    expect(timePoints([{t:2,count:1},{t:1,count:2},{t:2,count:3}])).toEqual([{t:1,count:2},{t:2,count:3}]);
+    expect(timeCoords([{t:1,count:2},{t:1,count:3}],340,120)).toEqual([{x:170,y:60}]);
+    expect(timeCoords([],340,120)).toEqual([]);
+  });
+  it('긴 공백을 별도 선으로 분리한다',()=>{
+    const points=[{t:0,count:1},{t:30*60000,count:2},{t:360*60000,count:3}];
+    expect(timeSegments(points)).toEqual([points.slice(0,2),points.slice(2)]);
+    expect(timeSegments([{t:0,count:1},{t:45*60000,count:2}])).toHaveLength(1);
+  });
+  it('비정상 숫자를 제거하고 작은 캔버스에서도 유한 좌표를 만든다',()=>{
+    expect(timePoints([{t:NaN,count:1},{t:1,count:Infinity}])).toEqual([]);
+    expect(timeCoords([{t:0,count:1},{t:1,count:2}],4,4).every(c=>Number.isFinite(c.x)&&Number.isFinite(c.y))).toBe(true);
   });
 });
