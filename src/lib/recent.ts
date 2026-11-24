@@ -66,3 +66,10 @@ export function mergeLivePoint(points: HistoryPoint[], live: HistoryPoint | null
   if (live.t <= last.t) return points;
   return [...points, live];
 }
+
+/** 서버 이력과 현재 세션을 시각으로 병합한다. 같은 시각은 세션 실측 우선. */
+export function mergeSessionHistory(server: HistoryPoint[], session: HistoryPoint[]): HistoryPoint[] {
+  const points = new Map<number, HistoryPoint>();
+  for (const p of [...server, ...session]) points.set(p.t, p);
+  return [...points.values()].sort((a, b) => a.t - b.t);
+}
