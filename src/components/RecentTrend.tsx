@@ -53,7 +53,7 @@ export default function RecentTrend({ points: rawPoints, width = 340, height = 1
         <svg
           viewBox={`0 0 ${width} ${height}`}
           role="img"
-          aria-label={`최근 24시간 주차대수 추이: 최대 ${formatCount(max)}대(${formatDayClock(maxAt.t)}), 최소 ${formatCount(min)}대(${formatDayClock(minAt.t)}). 측정 ${points.length}회. 실제 경과시간 축, 수집 공백 ${gaps}곳`}
+          aria-label={`최근 24시간 주차대수 추이: 최대 ${formatCount(max)}대(${formatDayClock(maxAt.t)}), 최소 ${formatCount(min)}대(${formatDayClock(minAt.t)}). 측정 ${points.length}회. 실제 경과시간 축, 표시 데이터 공백 ${gaps}곳`}
         >
           {paths.map(({part,line}, i) => part.length > 1 ? (
             <g key={i}>
@@ -75,7 +75,7 @@ export default function RecentTrend({ points: rawPoints, width = 340, height = 1
           {formatDayClock(points[0].t)} ~ {formatDayClock(points[points.length - 1].t)}
         </span>
         <span className="trend-caption-right">{regular ? '30분 간격' : '실제 시간축'} · 측정 {points.length}회</span>
-        {gaps > 0 && <span>수집 공백 {gaps}곳: 45분 초과 구간은 선을 연결하지 않습니다.</span>}
+        {gaps > 0 && <span>표시 데이터 공백 {gaps}곳: 45분 초과 구간은 선을 연결하지 않습니다. 수집 중단 여부는 이 그래프만으로 알 수 없습니다.</span>}
       </figcaption>
     </figure>
   );
