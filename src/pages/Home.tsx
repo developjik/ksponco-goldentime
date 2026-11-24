@@ -53,7 +53,7 @@ export default function Home() {
 
       {snapshot && error && (
         <p role="status" className="notice">
-          최근 갱신에 실패해 마지막 값을 표시하는 중입니다 ({error}).
+          최근 갱신에 실패해 마지막 값을 표시하는 중입니다 ({error}). 마지막 성공: {new Date(snapshot.fetchedAt).toLocaleTimeString('ko-KR')}.
         </p>
       )}
 
