@@ -2,13 +2,13 @@ import {test,expect} from '@playwright/test';
 test('timeout unlocks manual and automatic refresh; leaving cancels the request',async({page})=>{
   await page.clock.install();
   await page.addInitScript(()=>{
-    const state={mode:'hang',calls:0,signals:[] as AbortSignal[]};
+    const state={mode:'hang',value:1250,calls:0,signals:[] as AbortSignal[]};
     Object.assign(window,{parkingTest:state});
     const original=window.fetch;
     window.fetch=(url,init)=>{
       if(!String(url).includes('parkingorsApi'))return original(url,init);
       state.calls++;state.signals.push(init!.signal as AbortSignal);
-      return state.mode==='hang' ? new Promise<Response>(()=>{}) : Promise.resolve(new Response('[{"parking_sum":1250}]'));
+      return state.mode==='hang' ? new Promise<Response>(()=>{}) : Promise.resolve(new Response(JSON.stringify([{parking_sum:state.value}])));
     };
   });
   const state=()=>page.evaluate(()=> (window as unknown as {parkingTest:{calls:number}}).parkingTest.calls);
@@ -24,8 +24,9 @@ test('timeout unlocks manual and automatic refresh; leaving cancels the request'
   await page.clock.fastForward(10001);
   await expect(page.getByRole('status').filter({hasText:'마지막 성공'})).toBeVisible();
   await expect(page.getByRole('button',{name:'새로고침'})).toBeEnabled();
-  await page.evaluate(()=>Object.assign((window as unknown as {parkingTest:object}).parkingTest,{mode:'ok'}));
+  await page.evaluate(()=>Object.assign((window as unknown as {parkingTest:object}).parkingTest,{mode:'ok',value:1300}));
   await page.clock.fastForward(60001);
+  await expect(page.getByRole('meter')).toContainText('1,300');
   await expect(page.getByRole('status').filter({hasText:'마지막 성공'})).toHaveCount(0);
   await page.evaluate(()=>Object.assign((window as unknown as {parkingTest:object}).parkingTest,{mode:'hang'}));
   await page.getByRole('button',{name:'새로고침'}).click();
