@@ -56,7 +56,7 @@ export default function Home() {
         <section className="panel" aria-labelledby="recent-title">
           <div className="panel-head">
             <h2 id="recent-title">최근 24시간 추이</h2>
-            <span className="muted">30분 간격 수집</span>
+            <span className="muted">서버 30분 · 탭 1분 실측</span>
           </div>
           {(recent.stale || recent.refreshError) && <p role="status" className="notice">
             {recent.refreshError ? `이력 갱신 실패 (${recent.refreshError}). ` : '수집 이력이 오래되었습니다. '}
@@ -65,7 +65,7 @@ export default function Home() {
           </p>}
           <RecentTrend points={recentPoints} />
           <p className="muted small">
-            실시간 주차현황을 30분마다 기록한 값입니다. 페이지를 닫아도 계속 쌓입니다.
+            서버가 30분마다 수집한 값과 이 탭에서 1분마다 확인한 실측을 함께 표시합니다. 서버 수집은 페이지를 닫아도 계속됩니다.
           </p>
         </section>
       )}
