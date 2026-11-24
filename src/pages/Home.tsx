@@ -65,7 +65,7 @@ export default function Home() {
           </p>}
           <RecentTrend points={recentPoints} />
           <p className="muted small">
-            서버가 30분마다 수집한 값과 이 탭에서 1분마다 확인한 실측을 함께 표시합니다. 서버 수집은 페이지를 닫아도 계속됩니다.
+            서버가 30분마다 수집한 값과 이 탭이 화면에 보이는 동안 1분마다 확인한 실측을 함께 표시합니다. 서버 수집은 페이지를 닫아도 계속됩니다.
           </p>
         </section>
       )}
