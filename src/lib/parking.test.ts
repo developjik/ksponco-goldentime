@@ -3,6 +3,7 @@ import { ParkingApiError, PARKING_API_URL, fetchParkingNow, parseParkingSum } fr
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.useRealTimers();
 });
 
 describe('fetchParkingNow — 재시도', () => {
@@ -74,5 +75,55 @@ describe('PARKING_API_URL 상수', () => {
     expect(PARKING_API_URL).toBe(
       'https://www.ksponco.or.kr/online/main/parkingorsApi.do?apiKey=PARKING21803504',
     );
+  });
+});
+
+describe('요청 제한시간과 취소', () => {
+  it('재시도도 최초 요청의 제한시간을 공유한다', async()=>{
+    vi.useFakeTimers();
+    const mock=vi.fn().mockImplementationOnce(()=>new Promise((_,reject)=>setTimeout(()=>reject(new TypeError('network')),90))).mockImplementationOnce(()=>new Promise(()=>{}));
+    vi.stubGlobal('fetch',mock);
+    const pending=fetchParkingNow(undefined,100);
+    const rejected=expect(pending).rejects.toThrow('시간이 초과');
+    await vi.advanceTimersByTimeAsync(90);expect(mock).toHaveBeenCalledTimes(2);
+    await vi.advanceTimersByTimeAsync(10);await rejected;
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('끝나지 않는 fetch도 제한시간 후 해제하고 재시도할 수 있다', async () => {
+    vi.useFakeTimers();
+    let signal: AbortSignal | undefined;
+    const mock = vi.fn((_url: unknown, init: RequestInit) => {signal=init.signal ?? undefined;return new Promise<Response>(()=>{});});
+    vi.stubGlobal('fetch',mock);
+    const request=fetchParkingNow(undefined,100);
+    const rejected=expect(request).rejects.toThrow('시간이 초과');
+    await vi.advanceTimersByTimeAsync(100); await rejected;
+    expect(signal?.aborted).toBe(true);
+    expect(mock).toHaveBeenCalledTimes(1);
+    mock.mockResolvedValueOnce(new Response('[{"parking_sum":123}]'));
+    expect((await fetchParkingNow(undefined,100)).parkedTotal).toBe(123);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+  it('응답 본문이 멈춰도 제한시간이 적용된다',async()=>{
+    vi.useFakeTimers();
+    vi.stubGlobal('fetch',vi.fn().mockResolvedValue({ok:true,json:()=>new Promise(()=>{})}));
+    const request=fetchParkingNow(undefined,100);
+    const rejected=expect(request).rejects.toThrow('시간이 초과');
+    await vi.advanceTimersByTimeAsync(100);await rejected;
+  });
+  it('외부 취소는 즉시 요청을 끝내고 재시도하지 않는다',async()=>{
+    vi.useFakeTimers();
+    const mock=vi.fn().mockImplementation(()=>new Promise(()=>{}));vi.stubGlobal('fetch',mock);
+    const controller=new AbortController();
+    const request=fetchParkingNow(controller.signal,1000);
+    controller.abort();
+    await expect(request).rejects.toMatchObject({name:'AbortError'});
+    expect(mock).toHaveBeenCalledTimes(1);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+  it('이미 취소된 신호로는 fetch하지 않는다',async()=>{
+    const mock=vi.fn();vi.stubGlobal('fetch',mock);const c=new AbortController();c.abort();
+    await expect(fetchParkingNow(c.signal)).rejects.toMatchObject({name:'AbortError'});
+    expect(mock).not.toHaveBeenCalled();
   });
 });

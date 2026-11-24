@@ -22,21 +22,25 @@ export function useParking(pollMs: number = POLL_MS): ParkingState {
   const [history, setHistory] = useState<HistoryPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const inFlight = useRef(false);
+  const inFlight = useRef<AbortController | null>(null);
+  const active = useRef(false);
   const lastAt = useRef(0);
 
   const refresh = useCallback(() => {
-    if (inFlight.current) return;
-    inFlight.current = true;
+    if (!active.current || inFlight.current) return;
+    const controller = new AbortController();
+    inFlight.current = controller;
     setLoading(true);
-    fetchParkingNow()
+    fetchParkingNow(controller.signal)
       .then((snap) => {
+        if (!active.current || inFlight.current !== controller) return;
         lastAt.current = snap.fetchedAt;
         setSnapshot(snap);
         setHistory((h) => appendPoint(h, { t: snap.fetchedAt, count: snap.parkedTotal }));
         setError(null);
       })
       .catch((e: unknown) => {
+        if (!active.current || inFlight.current !== controller || controller.signal.aborted) return;
         if (e instanceof DOMException && e.name === 'AbortError') return;
         setError(
           e instanceof ParkingApiError || e instanceof Error
@@ -45,12 +49,15 @@ export function useParking(pollMs: number = POLL_MS): ParkingState {
         );
       })
       .finally(() => {
-        inFlight.current = false;
-        setLoading(false);
+        if (active.current && inFlight.current === controller) {
+          inFlight.current = null;
+          setLoading(false);
+        }
       });
   }, []);
 
   useEffect(() => {
+    active.current = true;
     refresh();
     const id = window.setInterval(() => {
       if (!document.hidden) refresh();
@@ -60,6 +67,10 @@ export function useParking(pollMs: number = POLL_MS): ParkingState {
     };
     document.addEventListener('visibilitychange', onVisible);
     return () => {
+      active.current = false;
+      const request = inFlight.current;
+      inFlight.current = null;
+      request?.abort();
       window.clearInterval(id);
       document.removeEventListener('visibilitychange', onVisible);
     };
