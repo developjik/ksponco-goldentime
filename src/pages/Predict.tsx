@@ -134,6 +134,11 @@ function Ready({ data, history }: { data: ParkingPattern; history: RecentState }
         </ul>
       </section>
 
+      {history.status === 'ready' && (history.stale || history.refreshError) && <p role="status" className="notice">
+        실측 이력 {history.refreshError ? `갱신 실패 (${history.refreshError})` : '오래됨'}.
+        마지막 수집: {history.data.length ? new Date(history.data[history.data.length-1].t).toLocaleString('ko-KR') : '기록 없음'}.
+        마지막 성공 이력 기준 정확도입니다.
+      </p>}
       <AccuracyCard result={result} year={data.year} historyLoading={history.status === 'loading'} />
 
       <section className="panel" aria-labelledby="map-title">
