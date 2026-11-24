@@ -37,14 +37,38 @@ export function parseParkingSum(data: unknown): number {
   return Math.floor(n);
 }
 
-/** 실시간 주차현황 1회 조회. 게이트웨이가 간헐 실패·빈응답을 주므로 1회 재시도한다. */
-export async function fetchParkingNow(signal?: AbortSignal): Promise<ParkingSnapshot> {
-  try {
-    return await fetchParkingOnce(signal);
-  } catch (e) {
-    if (e instanceof DOMException && e.name === 'AbortError') throw e;
-    return await fetchParkingOnce(signal);
-  }
+/** 전체 요청(최대 1회 재시도 포함)의 제한시간. */
+export const PARKING_TIMEOUT_MS = 10_000;
+
+/** 신호를 무시하는 fetch 구현도 제한시간 후 호출자를 해제한다. */
+export async function fetchParkingNow(signal?: AbortSignal, timeoutMs = PARKING_TIMEOUT_MS): Promise<ParkingSnapshot> {
+  const controller = new AbortController();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let removeAbort: (() => void) | undefined;
+  const stopped = new Promise<never>((_, reject) => {
+    const cancel = () => {
+      controller.abort();
+      reject(new DOMException('Request cancelled', 'AbortError'));
+    };
+    if (signal?.aborted) { cancel(); return; }
+    signal?.addEventListener('abort', cancel, { once: true });
+    removeAbort = () => signal?.removeEventListener('abort', cancel);
+    timer = setTimeout(() => {
+      controller.abort();
+      reject(new ParkingApiError('주차현황 요청 시간이 초과되었습니다. 다시 시도해 주세요.'));
+    }, timeoutMs);
+  });
+  const request = async () => {
+    if (controller.signal.aborted) throw new DOMException('Request cancelled', 'AbortError');
+    try {
+      return await fetchParkingOnce(controller.signal);
+    } catch (e) {
+      if (controller.signal.aborted) throw e;
+      return await fetchParkingOnce(controller.signal);
+    }
+  };
+  try { return await Promise.race([stopped, request()]); }
+  finally { clearTimeout(timer); removeAbort?.(); }
 }
 
 /** 재시도 없는 1회 조회(내부용). */
@@ -62,7 +86,8 @@ async function fetchParkingOnce(signal?: AbortSignal): Promise<ParkingSnapshot> 
   let data: unknown;
   try {
     data = await res.json();
-  } catch {
+  } catch (e) {
+    if (signal?.aborted) throw e;
     throw new ParkingApiError('주차현황 응답을 해석할 수 없습니다');
   }
   return { fetchedAt: Date.now(), parkedTotal: parseParkingSum(data) };
